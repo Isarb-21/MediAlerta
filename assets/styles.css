@@ -64,7 +64,7 @@ p, label, li { color: var(--ink); }
 .user-chip { background: var(--canvas); border: 1px solid var(--line); border-radius: 10px; padding: .65rem .75rem; color: var(--ink); font-size: .85rem; margin-bottom: 1.2rem; }
 
 .login-hero { min-height: 520px; padding: clamp(2rem, 5vw, 4.5rem); border-radius: 28px; background: linear-gradient(145deg, #12395f, #174f66); color: #fff; display: flex; flex-direction: column; justify-content: center; box-shadow: var(--shadow); }
-.hero-logo { width: min(260px, 58%); height: auto; margin-bottom: 1rem; display: block; }
+.hero-logo { width: min(260px, 58%); height: auto; margin-bottom: 1rem; display: block; filter: brightness(0) invert(1); }
 .login-hero .eyebrow { color: #c2e9e4 !important; margin-top: 1rem; }
 .login-hero h1 { color: #fff !important; font-size: clamp(2.3rem, 4.5vw, 3.7rem) !important; line-height: 1.08; }
 .hero-copy { color: #eef5f8 !important; max-width: 390px; font-size: 1.05rem; line-height: 1.65; }
