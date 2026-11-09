@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -11,11 +11,20 @@ from langchain_core.messages import HumanMessage, SystemMessage
 load_dotenv()
 
 st.set_page_config(
-    page_title="MediAlerta",
+    page_title="MediAlerta | Cuidado conectado",
     page_icon="💊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+
+def apply_styles():
+    css_path = Path(__file__).parent / "assets" / "styles.css"
+    if css_path.exists():
+        st.markdown(f"<style>{css_path.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
+
+
+apply_styles()
 
 
 @st.cache_data
@@ -29,12 +38,7 @@ def get_sample_data():
         "emergency_contact": "Camilo García",
     }
 
-    vitals = {
-        "bpm": 76,
-        "spo2": 98,
-        "temperature": 36.7,
-        "timestamp": "2026-11-08 08:45",
-    }
+    vitals = {"bpm": 76, "spo2": 98, "temperature": 36.7, "timestamp": "2026-11-08 08:45"}
 
     medications = pd.DataFrame(
         [
@@ -84,151 +88,159 @@ def get_sample_data():
     )
 
     adherence = {"semanal": 90, "mensual": 89, "ultima_semana": 6, "tomadas": 18, "faltantes": 2}
-
-    return {
-        "patient": patient,
-        "vitals": vitals,
-        "medications": medications,
-        "history": history,
-        "alerts": alerts,
-        "inventory": inventory,
-        "vital_history": vital_history,
-        "adherence": adherence,
-    }
+    return {"patient": patient, "vitals": vitals, "medications": medications, "history": history, "alerts": alerts, "inventory": inventory, "vital_history": vital_history, "adherence": adherence}
 
 
 def get_ai_recommendation(data):
     api_key = os.getenv("ANTHROPIC_API_KEY") or st.session_state.get("anthropic_key")
     if not api_key:
-        bpm = data["vitals"]["bpm"]
-        spo2 = data["vitals"]["spo2"]
+        bpm, spo2 = data["vitals"]["bpm"], data["vitals"]["spo2"]
         if bpm > 85:
-            return "El paciente presenta un valor de frecuencia cardiaca elevado. Se recomienda validar la toma de medicamentos y activar revisión del cuidador."
+            return "El valor de frecuencia cardiaca de ejemplo está elevado. Verifica que la medición se haya realizado correctamente y contacta al profesional responsable si persiste o preocupa."
         if spo2 < 95:
-            return "La frecuencia de oxígeno está por debajo del rango esperado. Se recomienda verificar estado respiratorio y avisar a la persona responsable."
+            return "La lectura de oxígeno de ejemplo está por debajo del umbral de demostración. Verifica la medición y consulta al profesional responsable."
         if data["medications"]["estado"].eq("Olvidado").any():
-            return "Existe una dosis pendiente. Se recomienda recordar la administración y registrar la toma para mantener la adherencia."
-        return "Estado general estable. La adherencia y los signos vitales se mantienen en rangos aceptables."
+            return "Hay una dosis marcada como olvidada en los datos de demostración. Confirma el registro con el cuidador y consulta al profesional si tienes dudas sobre qué hacer."
+        return "Los valores de ejemplo están dentro de los umbrales de esta demostración. Confirma siempre cualquier lectura con el dispositivo y sigue las indicaciones del equipo de salud."
 
     try:
         llm = ChatAnthropic(model="claude-haiku-4-5-20251001", api_key=api_key, max_tokens=700)
         messages = [
-            SystemMessage(content="Eres un asistente médico de apoyo para cuidadores y familiares. Responde en español, con tono claro, prioritario y clínicamente prudente. No reemplazas diagnósticos profesionales. Haz recomendaciones concisas y accionables para un paciente crónico."),
+            SystemMessage(content="Eres un asistente informativo para cuidadores. Responde en español, de forma prudente y clara. No diagnostiques ni indiques iniciar, suspender o cambiar medicamentos. Estos datos son simulados. Si describen síntomas graves o empeoramiento repentino, recomienda contactar inmediatamente los servicios de emergencia locales y al profesional de salud. No sustituyes atención profesional."),
             HumanMessage(content=(
-                f"Paciente: {data['patient']['name']} - {data['patient']['condition']}\n"
-                f"BPM: {data['vitals']['bpm']}\nSpO2: {data['vitals']['spo2']}%\n"
-                f"Adherencia semanal: {data['adherence']['semanal']}%\nAlertas: {len(data['alerts'])}\n"
+                f"Paciente de demostración: {data['patient']['name']} - {data['patient']['condition']}\n"
+                f"BPM: {data['vitals']['bpm']}\nSpO₂: {data['vitals']['spo2']}%\n"
+                f"Adherencia semanal: {data['adherence']['semanal']}%\nAlertas: {data['alerts']}\n"
                 f"Medicamentos: {data['medications'].to_dict(orient='records')}\n"
-                "Genera una recomendación breve para el cuidador con 3 puntos de acción y un resumen de riesgo."
+                "Resume la situación y sugiere acciones seguras para el cuidador. Aclara que no es un diagnóstico."
             )),
         ]
         return llm.invoke(messages).content
     except Exception:
-        return "La IA no pudo responder con la clave activa. Se muestra recomendación local basada en el estado actual del paciente."
+        return "No fue posible consultar la IA. Revisa la clave/conexión y consulta al profesional de salud para decisiones clínicas."
 
 
 def login_view():
-    st.title("💊 MediAlerta")
-    st.subheader("Sistema de monitoreo para cuidadores y familiares")
-    with st.form("login_form"):
-        st.markdown("### Iniciar sesión")
-        username = st.text_input("Usuario", placeholder="cuidador")
-        password = st.text_input("Contraseña", type="password", placeholder="••••••")
-        login_btn = st.form_submit_button("Ingresar", use_container_width=True)
-        if login_btn:
-            if username.strip() and password.strip():
-                st.session_state["logged_in"] = True
-                st.session_state["user"] = username
-                st.rerun()
-            else:
-                st.warning("Debes ingresar usuario y contraseña para continuar.")
-    st.caption("Demo: usa cualquier usuario con contraseña válida para continuar.")
+    left, right = st.columns([1.2, 1], gap="large", vertical_alignment="center")
+    with left:
+        st.markdown(
+            '<div class="login-hero"><img src="https://raw.githubusercontent.com/Isarb-21/MediAlerta/main/assets/logo.svg" class="hero-logo" alt="MediAlerta logo" /><p class="eyebrow">CUIDADO CONECTADO</p><h1>Más tranquilidad<br>para quienes cuidan.</h1><p class="hero-copy">Signos vitales, medicamentos y alertas importantes en un solo lugar.</p><div class="hero-foot">MediAlerta <span>•</span> Demo de acompañamiento</div></div>',
+            unsafe_allow_html=True,
+        )
+    with right:
+        st.markdown('<div class="login-card">', unsafe_allow_html=True)
+        st.markdown("### Bienvenido/a", help="Acceso de demostración")
+        st.caption("Ingresa para revisar el estado de tu paciente.")
+        with st.form("login_form"):
+            username = st.text_input("Usuario", placeholder="cuidador")
+            password = st.text_input("Contraseña", type="password", placeholder="••••••")
+            if st.form_submit_button("Ingresar a MediAlerta", use_container_width=True):
+                if username.strip() and password.strip():
+                    st.session_state["logged_in"] = True
+                    st.session_state["user"] = username
+                    st.rerun()
+                else:
+                    st.warning("Ingresa usuario y contraseña para continuar.")
+        st.caption("Demo: cualquier usuario y contraseña no vacíos.")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_dashboard(data):
-    st.title("📊 Dashboard principal")
     patient, vitals, adherence = data["patient"], data["vitals"], data["adherence"]
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("❤️ BPM", f"{vitals['bpm']}", "Normal")
-    col2.metric("🩸 SpO₂", f"{vitals['spo2']}%", "Estable")
-    col3.metric("⏰ Próxima dosis", "20:00", "Hoy")
-    col4.metric("📈 Adherencia", f"{adherence['semanal']}%", "Semanal")
-    st.markdown("---")
-    col_left, col_right = st.columns([1.8, 1.2])
-    with col_left:
-        st.subheader("Historial de signos vitales")
-        st.line_chart(data["vital_history"].set_index("fecha")[["bpm", "spo2"]])
-    with col_right:
-        st.subheader("Estado del paciente")
-        st.info(f"Paciente: {patient['name']}")
-        st.info(f"Edad: {patient['age']} años")
-        st.info(f"Condición: {patient['condition']}")
-        st.info(f"Cuidador: {patient['caregiver']}")
-    st.markdown("---")
-    st.subheader("Recomendación del asistente")
-    st.success(get_ai_recommendation(data))
-    st.markdown("---")
-    col_a, col_b = st.columns(2)
-    with col_a:
-        st.subheader("Alertas recientes")
-        for alert in data["alerts"]:
-            severity = "🔴" if alert["prioridad"] == "Alta" else "🟠"
-            st.markdown(f"{severity} **{alert['titulo']}**\n{alert['descripcion']}\nHora: {alert['hora']} | Tipo: {alert['tipo']}")
-    with col_b:
-        st.subheader("Medicamentos próximos")
-        st.dataframe(data["medications"][["medicamento", "hora", "estado", "dosis"]], use_container_width=True, hide_index=True)
+    st.markdown('<p class="eyebrow">VISTA GENERAL · HOY</p>', unsafe_allow_html=True)
+    st.title(f"Buenos días, {st.session_state.get('user', 'cuidador')} 👋")
+    st.markdown(f'<p class="subtle">Aquí tienes el resumen de cuidado de <b>{patient["name"]}</b>.</p>', unsafe_allow_html=True)
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("❤️  Frecuencia cardiaca", f"{vitals['bpm']} bpm", "En rango demo")
+    c2.metric("🫁  Oxígeno en sangre", f"{vitals['spo2']}%", "Estable · demo")
+    c3.metric("⏰  Próxima dosis", "20:00", "Atorvastatina")
+    c4.metric("📈  Adherencia semanal", f"{adherence['semanal']}%", "+4% vs. semana anterior")
+
+    st.markdown('<div class="demo-note">● Datos de demostración — no corresponden a mediciones clínicas en tiempo real.</div>', unsafe_allow_html=True)
+    st.markdown("")
+    left, right = st.columns([1.65, 1], gap="large")
+    with left:
+        st.markdown('<div class="section-heading"><div><p class="eyebrow">TENDENCIA</p><h3>Signos vitales</h3></div><span class="tag">Últimos 7 días</span></div>', unsafe_allow_html=True)
+        st.line_chart(data["vital_history"].set_index("fecha")[["bpm", "spo2"]], height=260)
+    with right:
+        st.markdown('<p class="eyebrow">PACIENTE</p><h3>Resumen de cuidado</h3>', unsafe_allow_html=True)
+        st.markdown(f'<div class="patient-card"><div class="avatar">{patient["name"][0]}</div><div><b>{patient["name"]}</b><br><span>{patient["age"]} años · {patient["condition"]}</span></div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="detail-row"><span>Cuidador principal</span><b>{patient["caregiver"]}</b></div><div class="detail-row"><span>Última actualización</span><b>{vitals["timestamp"]}</b></div>', unsafe_allow_html=True)
+        st.progress(adherence["semanal"] / 100, text=f"Adherencia semanal · {adherence['semanal']}%")
+
+    st.markdown('<p class="eyebrow section-eyebrow">PARA TENER EN CUENTA</p>', unsafe_allow_html=True)
+    alerts_col, meds_col = st.columns(2, gap="large")
+    with alerts_col:
+        st.markdown("### Alertas recientes")
+        for alert in data["alerts"][:2]:
+            st.markdown(f'<div class="alert-card {"alert-high" if alert["prioridad"] == "Alta" else "alert-medium"}"><div><b>{alert["titulo"]}</b><br><span>{alert["descripcion"]}</span></div><small>{alert["hora"]}</small></div>', unsafe_allow_html=True)
+    with meds_col:
+        st.markdown("### Próximos medicamentos")
+        st.dataframe(data["medications"][["medicamento", "hora", "estado"]], use_container_width=True, hide_index=True)
+
+    st.markdown("### Recomendación del asistente")
+    st.info(get_ai_recommendation(data))
 
 
 def render_medications(data):
-    st.title("💊 Medicamentos")
-    meds = data["medications"]
-    st.dataframe(meds, use_container_width=True, hide_index=True)
-    st.markdown("---")
-    st.subheader("Estado de administración")
-    for status, value in meds["estado"].value_counts().items():
-        st.write(f"{status}: {value}")
+    st.markdown('<p class="eyebrow">TRATAMIENTO</p>', unsafe_allow_html=True)
+    st.title("Medicamentos")
+    st.markdown('<p class="subtle">Consulta el horario y el estado de cada dosis registrada.</p>', unsafe_allow_html=True)
+    st.dataframe(data["medications"], use_container_width=True, hide_index=True)
+    counts = data["medications"]["estado"].value_counts()
+    cols = st.columns(max(len(counts), 1))
+    for col, (status, count) in zip(cols, counts.items()):
+        col.metric(status, count)
 
 
 def render_history(data):
-    st.title("🧾 Historial")
+    st.markdown('<p class="eyebrow">SEGUIMIENTO</p>', unsafe_allow_html=True)
+    st.title("Historial de medicación")
+    st.markdown('<p class="subtle">Revisa las dosis registradas y la adherencia.</p>', unsafe_allow_html=True)
     st.dataframe(data["history"], use_container_width=True, hide_index=True)
-    st.markdown("---")
-    st.subheader("Resumen semanal")
-    st.progress(int(data["adherence"]["semanal"]))
-    st.write(f"Adherencia semanal: {data['adherence']['semanal']}%")
+    st.markdown("### Adherencia semanal")
+    st.progress(int(data["adherence"]["semanal"]), text=f"{data['adherence']['semanal']}% de adherencia · datos de demostración")
 
 
 def render_alerts(data):
-    st.title("🚨 Alertas")
+    st.markdown('<p class="eyebrow">CENTRO DE NOTIFICACIONES</p>', unsafe_allow_html=True)
+    st.title("Alertas")
+    st.markdown('<p class="subtle">Avisos simulados para apoyar el seguimiento del cuidador.</p>', unsafe_allow_html=True)
     for alert in data["alerts"]:
-        message = f"**{alert['titulo']}**\n{alert['descripcion']}\nHora: {alert['hora']} | Tipo: {alert['tipo']}"
+        message = f"**{alert['titulo']}**  \n{alert['descripcion']}  \n`{alert['tipo']} · {alert['hora']} · Prioridad {alert['prioridad']}`"
         st.error(message) if alert["prioridad"] == "Alta" else st.warning(message)
 
 
 def render_inventory(data):
-    st.title("📦 Inventario del pastillero")
+    st.markdown('<p class="eyebrow">PASTILLERO</p>', unsafe_allow_html=True)
+    st.title("Inventario")
+    st.markdown('<p class="subtle">Existencias registradas por compartimento.</p>', unsafe_allow_html=True)
     inventory = data["inventory"].copy()
     inventory["porcentaje"] = (inventory["stock"] / inventory["capacidad"]) * 100
     st.dataframe(inventory[["compartimento", "medicamento", "stock", "capacidad", "estado"]], use_container_width=True, hide_index=True)
-    st.markdown("---")
-    for _, item in inventory.iterrows():
-        st.write(f"{item['compartimento']} - {item['medicamento']}")
-        st.progress(min(item["porcentaje"], 100) / 100)
-        st.caption(f"{item['stock']} / {item['capacidad']} unidades")
+    cols = st.columns(2)
+    for index, (_, item) in enumerate(inventory.iterrows()):
+        with cols[index % 2]:
+            st.markdown(f"**{item['compartimento']} · {item['medicamento']}** — {item['estado']}")
+            st.progress(min(item["porcentaje"], 100) / 100, text=f"{item['stock']} de {item['capacidad']} unidades")
 
 
 def render_profile(data):
-    st.title("👤 Perfil y contactos")
+    st.markdown('<p class="eyebrow">CUENTA Y CONTACTOS</p>', unsafe_allow_html=True)
+    st.title("Perfil del paciente")
     patient = data["patient"]
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(f"**Nombre:** {patient['name']}")
-        st.markdown(f"**Edad:** {patient['age']} años")
-        st.markdown(f"**Condición:** {patient['condition']}")
-    with col2:
-        st.markdown(f"**Cuidador:** {patient['caregiver']}")
-        st.markdown(f"**Teléfono:** {patient['phone']}")
-        st.markdown(f"**Contacto de emergencia:** {patient['emergency_contact']}")
+    left, right = st.columns(2)
+    with left:
+        st.markdown("### Información personal")
+        st.write(f"**Nombre:** {patient['name']}")
+        st.write(f"**Edad:** {patient['age']} años")
+        st.write(f"**Condición registrada:** {patient['condition']}")
+    with right:
+        st.markdown("### Red de apoyo")
+        st.write(f"**Cuidador:** {patient['caregiver']}")
+        st.write(f"**Teléfono:** {patient['phone']}")
+        st.write(f"**Contacto de emergencia:** {patient['emergency_contact']}")
 
 
 def main():
@@ -240,25 +252,21 @@ def main():
 
     data = get_sample_data()
     with st.sidebar:
-        st.title("MediAlerta")
-        st.caption(f"Bienvenido/a, {st.session_state.get('user', 'Cuidador')}")
+        st.image("assets/logo.svg", width=170)
+        st.markdown(f'<div class="user-chip">👋 &nbsp; {st.session_state.get("user", "Cuidador")}</div>', unsafe_allow_html=True)
+        st.markdown('<p class="nav-label">MENÚ PRINCIPAL</p>', unsafe_allow_html=True)
+        page = st.radio("Navegación", ["Dashboard", "Medicamentos", "Historial", "Alertas", "Inventario", "Perfil"], label_visibility="collapsed", index=0)
         st.markdown("---")
-        page = st.radio("Navegación", ["Dashboard", "Medicamentos", "Historial", "Alertas", "Inventario", "Perfil"], index=0)
-        st.markdown("---")
-        st.text_input("API Key Anthropic (opcional)", type="password", key="anthropic_key")
-        if st.button("Cerrar sesión"):
+        with st.expander("⚙️ Configurar IA"):
+            st.caption("Opcional: habilita recomendaciones de Claude.")
+            st.text_input("API Key Anthropic", type="password", key="anthropic_key", label_visibility="collapsed", placeholder="ANTHROPIC_API_KEY")
+        if st.button("Cerrar sesión", use_container_width=True):
             st.session_state["logged_in"] = False
             st.session_state.pop("user", None)
             st.rerun()
+        st.markdown('<div class="sidebar-footer">MVP demostrativo<br>La información no sustituye consejo médico.</div>', unsafe_allow_html=True)
 
-    pages = {
-        "Dashboard": render_dashboard,
-        "Medicamentos": render_medications,
-        "Historial": render_history,
-        "Alertas": render_alerts,
-        "Inventario": render_inventory,
-        "Perfil": render_profile,
-    }
+    pages = {"Dashboard": render_dashboard, "Medicamentos": render_medications, "Historial": render_history, "Alertas": render_alerts, "Inventario": render_inventory, "Perfil": render_profile}
     pages[page](data)
 
 
