@@ -1,3 +1,4 @@
+import base64
 import os
 from pathlib import Path
 
@@ -121,10 +122,12 @@ def get_ai_recommendation(data):
 
 
 def login_view():
+    logo_path = Path(__file__).parent / "assets" / "logo.svg"
+    logo_data = base64.b64encode(logo_path.read_bytes()).decode("ascii")
     left, right = st.columns([1.2, 1], gap="large", vertical_alignment="center")
     with left:
         st.markdown(
-            '<div class="login-hero"><img src="https://raw.githubusercontent.com/Isarb-21/MediAlerta/main/assets/logo.svg" class="hero-logo" alt="MediAlerta logo" /><p class="eyebrow">CUIDADO CONECTADO</p><h1>Más tranquilidad<br>para quienes cuidan.</h1><p class="hero-copy">Signos vitales, medicamentos y alertas importantes en un solo lugar.</p><div class="hero-foot">MediAlerta <span>•</span> Demo de acompañamiento</div></div>',
+            f'<div class="login-hero"><img src="data:image/svg+xml;base64,{logo_data}" class="hero-logo" alt="MediAlerta logo" /><p class="eyebrow">CUIDADO CONECTADO</p><h1>Más tranquilidad<br>para quienes cuidan.</h1><p class="hero-copy">Signos vitales, medicamentos y alertas importantes en un solo lugar.</p><div class="hero-foot">MediAlerta <span>•</span> Demo de acompañamiento</div></div>',
             unsafe_allow_html=True,
         )
     with right:
