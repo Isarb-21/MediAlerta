@@ -1,3 +1,8 @@
+"""Aplicación Streamlit de demostración para el seguimiento de cuidados."""
+
+# ---------------------------------------------------------------------------
+# Configuración general y estilos
+# ---------------------------------------------------------------------------
 import base64
 import os
 from pathlib import Path
@@ -20,6 +25,7 @@ st.set_page_config(
 
 
 def apply_styles():
+    """Carga los estilos de la aplicación desde assets/styles.css, si existe."""
     css_path = Path(__file__).parent / "assets" / "styles.css"
     if css_path.exists():
         st.markdown(f"<style>{css_path.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
@@ -28,8 +34,17 @@ def apply_styles():
 apply_styles()
 
 
+# ---------------------------------------------------------------------------
+# Datos de demostración y recomendaciones
+# ---------------------------------------------------------------------------
 @st.cache_data
 def get_sample_data():
+    """Construye y almacena en caché los datos simulados usados en las vistas.
+
+    Returns:
+        Diccionario con paciente, signos vitales, medicamentos, historial,
+        alertas, inventario y métricas de adherencia.
+    """
     patient = {
         "name": "Ana García",
         "age": 72,
@@ -93,6 +108,14 @@ def get_sample_data():
 
 
 def get_ai_recommendation(data):
+    """Genera una recomendación informativa con Claude o con reglas de ejemplo.
+
+    Args:
+        data: Datos del paciente y sus registros devueltos por get_sample_data.
+
+    Returns:
+        Texto de recomendación en español para mostrar en el Dashboard.
+    """
     api_key = os.getenv("ANTHROPIC_API_KEY") or st.session_state.get("anthropic_key")
     if not api_key:
         bpm, spo2 = data["vitals"]["bpm"], data["vitals"]["spo2"]
@@ -121,7 +144,26 @@ def get_ai_recommendation(data):
         return "No fue posible consultar la IA. Revisa la clave/conexión y consulta al profesional de salud para decisiones clínicas."
 
 
+# ---------------------------------------------------------------------------
+# Componentes reutilizables
+# ---------------------------------------------------------------------------
+def render_adherence_indicator(value):
+    """Muestra la adherencia semanal como un indicador circular."""
+    percentage = max(0, min(int(value), 100))
+    st.markdown(
+        f'<div class="adherence-indicator" role="img" aria-label="Adherencia semanal: {percentage}%">'
+        f'<div class="adherence-ring" style="--adherence: {percentage}%"><span>{percentage}%</span></div>'
+        '<div class="adherence-label"><strong>Adherencia semanal</strong><span>Datos de demostración</span></div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Vistas de la aplicación
+# ---------------------------------------------------------------------------
 def login_view():
+    """Muestra el formulario de acceso y la presentación de MediAlerta."""
     logo_path = Path(__file__).parent / "assets" / "logo.svg"
     logo_data = base64.b64encode(logo_path.read_bytes()).decode("ascii")
     left, right = st.columns([1.2, 1], gap="large", vertical_alignment="center")
@@ -149,7 +191,14 @@ def login_view():
 
 
 def render_dashboard(data):
+    """Renderiza el resumen principal del paciente y sus indicadores.
+
+    La vista se divide en métricas rápidas, tendencia y resumen del paciente,
+    alertas y próximos medicamentos, y recomendación del asistente.
+    """
     patient, vitals, adherence = data["patient"], data["vitals"], data["adherence"]
+
+    # Resumen: indicadores clave y aviso de datos simulados.
     st.markdown('<p class="eyebrow">VISTA GENERAL · HOY</p>', unsafe_allow_html=True)
     st.title(f"Buenos días, {st.session_state.get('user', 'cuidador')} 👋")
     st.markdown(f'<p class="subtle">Aquí tienes el resumen de cuidado de <b>{patient["name"]}</b>.</p>', unsafe_allow_html=True)
@@ -162,6 +211,8 @@ def render_dashboard(data):
 
     st.markdown('<div class="demo-note">● Datos de demostración — no corresponden a mediciones clínicas en tiempo real.</div>', unsafe_allow_html=True)
     st.markdown("")
+
+    # Seguimiento: evolución de signos vitales y datos generales del paciente.
     left, right = st.columns([1.65, 1], gap="large")
     with left:
         st.markdown('<div class="section-heading"><div><p class="eyebrow">TENDENCIA</p><h3>Signos vitales</h3></div><span class="tag">Últimos 7 días</span></div>', unsafe_allow_html=True)
@@ -170,8 +221,9 @@ def render_dashboard(data):
         st.markdown('<p class="eyebrow">PACIENTE</p><h3>Resumen de cuidado</h3>', unsafe_allow_html=True)
         st.markdown(f'<div class="patient-card"><div class="avatar">{patient["name"][0]}</div><div><b>{patient["name"]}</b><br><span>{patient["age"]} años · {patient["condition"]}</span></div></div>', unsafe_allow_html=True)
         st.markdown(f'<div class="detail-row"><span>Cuidador principal</span><b>{patient["caregiver"]}</b></div><div class="detail-row"><span>Última actualización</span><b>{vitals["timestamp"]}</b></div>', unsafe_allow_html=True)
-        st.progress(adherence["semanal"] / 100, text=f"Adherencia semanal · {adherence['semanal']}%")
+        render_adherence_indicator(adherence["semanal"])
 
+    # Acciones pendientes: alertas recientes y tabla resumida de medicamentos.
     st.markdown('<p class="eyebrow section-eyebrow">PARA TENER EN CUENTA</p>', unsafe_allow_html=True)
     alerts_col, meds_col = st.columns(2, gap="large")
     with alerts_col:
@@ -182,11 +234,13 @@ def render_dashboard(data):
         st.markdown("### Próximos medicamentos")
         st.dataframe(data["medications"][["medicamento", "hora", "estado"]], use_container_width=True, hide_index=True)
 
+    # Orientación informativa generada con los datos actuales.
     st.markdown("### Recomendación del asistente")
     st.info(get_ai_recommendation(data))
 
 
 def render_medications(data):
+    """Muestra el plan de medicamentos y el conteo por estado de dosis."""
     st.markdown('<p class="eyebrow">TRATAMIENTO</p>', unsafe_allow_html=True)
     st.title("Medicamentos")
     st.markdown('<p class="subtle">Consulta el horario y el estado de cada dosis registrada.</p>', unsafe_allow_html=True)
@@ -198,15 +252,17 @@ def render_medications(data):
 
 
 def render_history(data):
+    """Muestra los registros históricos de dosis y la adherencia semanal."""
     st.markdown('<p class="eyebrow">SEGUIMIENTO</p>', unsafe_allow_html=True)
     st.title("Historial de medicación")
     st.markdown('<p class="subtle">Revisa las dosis registradas y la adherencia.</p>', unsafe_allow_html=True)
     st.dataframe(data["history"], use_container_width=True, hide_index=True)
     st.markdown("### Adherencia semanal")
-    st.progress(int(data["adherence"]["semanal"]), text=f"{data['adherence']['semanal']}% de adherencia · datos de demostración")
+    render_adherence_indicator(data["adherence"]["semanal"])
 
 
 def render_alerts(data):
+    """Presenta todas las alertas simuladas con estilo según su prioridad."""
     st.markdown('<p class="eyebrow">CENTRO DE NOTIFICACIONES</p>', unsafe_allow_html=True)
     st.title("Alertas")
     st.markdown('<p class="subtle">Avisos simulados para apoyar el seguimiento del cuidador.</p>', unsafe_allow_html=True)
@@ -216,12 +272,17 @@ def render_alerts(data):
 
 
 def render_inventory(data):
+    """Muestra existencias y nivel de llenado de cada compartimento."""
     st.markdown('<p class="eyebrow">PASTILLERO</p>', unsafe_allow_html=True)
     st.title("Inventario")
     st.markdown('<p class="subtle">Existencias registradas por compartimento.</p>', unsafe_allow_html=True)
+
+    # Calcula el porcentaje para visualizar el nivel de cada compartimento.
     inventory = data["inventory"].copy()
     inventory["porcentaje"] = (inventory["stock"] / inventory["capacidad"]) * 100
     st.dataframe(inventory[["compartimento", "medicamento", "stock", "capacidad", "estado"]], use_container_width=True, hide_index=True)
+
+    # Distribuye los indicadores en dos columnas sin modificar los datos base.
     cols = st.columns(2)
     for index, (_, item) in enumerate(inventory.iterrows()):
         with cols[index % 2]:
@@ -230,6 +291,7 @@ def render_inventory(data):
 
 
 def render_profile(data):
+    """Muestra la información del paciente y su red de apoyo."""
     st.markdown('<p class="eyebrow">CUENTA Y CONTACTOS</p>', unsafe_allow_html=True)
     st.title("Perfil del paciente")
     patient = data["patient"]
@@ -246,7 +308,12 @@ def render_profile(data):
         st.write(f"**Contacto de emergencia:** {patient['emergency_contact']}")
 
 
+# ---------------------------------------------------------------------------
+# Navegación, sesión y punto de entrada
+# ---------------------------------------------------------------------------
 def main():
+    """Controla el acceso, la barra lateral y el enrutamiento entre vistas."""
+    # Inicializa el acceso y detiene el flujo para mostrar el login si es necesario.
     if "logged_in" not in st.session_state:
         st.session_state["logged_in"] = False
     if not st.session_state["logged_in"]:
@@ -254,6 +321,8 @@ def main():
         return
 
     data = get_sample_data()
+
+    # La barra lateral contiene identidad, navegación, configuración de IA y salida.
     with st.sidebar:
         st.image("assets/logo.svg", width=170)
         st.markdown(f'<div class="user-chip">👋 &nbsp; {st.session_state.get("user", "Cuidador")}</div>', unsafe_allow_html=True)
@@ -269,6 +338,7 @@ def main():
             st.rerun()
         st.markdown('<div class="sidebar-footer">MVP demostrativo<br>La información no sustituye consejo médico.</div>', unsafe_allow_html=True)
 
+    # Asocia cada opción del menú con su función de renderizado y muestra la vista.
     pages = {"Dashboard": render_dashboard, "Medicamentos": render_medications, "Historial": render_history, "Alertas": render_alerts, "Inventario": render_inventory, "Perfil": render_profile}
     pages[page](data)
 

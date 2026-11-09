@@ -1,0 +1,13 @@
+# Fuerza el tema claro de MediAlerta para que coincida con styles.css.
+# Sin esto, si el navegador/sistema o el menú ⋮ usan modo oscuro, Streamlit pinta
+# inputs, botones, gráficos y métricas en oscuro sobre un fondo claro (texto ilegible).
+[theme]
+base = "light"
+primaryColor = "#087b78"
+backgroundColor = "#f7f9fb"
+secondaryBackgroundColor = "#e8f5f1"
+textColor = "#17324f"
+
+[client]
+# Oculta las opciones de desarrollo (Rerun, Clear cache, selector de tema, etc.).
+toolbarMode = "minimal"
