@@ -1,239 +1,47 @@
-/* Sistema visual de MediAlerta: alto contraste y accesibilidad. */
-
-/* -------------------------------------------------------------------------
-   Variables de diseño
-   Colores y efectos visuales compartidos en toda la aplicación.
-   ------------------------------------------------------------------------- */
+/* High-contrast MediAlerta theme, aligned with the navy medical logo. */
 :root {
   --ink: #17324f;
   --muted: #526579;
   --navy: #173b63;
-  --navy-dark: #102d4b;
   --teal: #087b78;
   --teal-dark: #075f5c;
   --mint: #e8f5f1;
   --canvas: #f7f9fb;
-  --white: #ffffff;
   --line: #dce5eb;
   --coral: #bd4d3a;
-  --amber: #a96a08;
-  --focus: #0b5fff;
   --shadow: 0 8px 22px rgba(23, 50, 79, .07);
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 16px;
-  color-scheme: light;
 }
 
-/* -------------------------------------------------------------------------
-   Base y accesibilidad
-   Selección de texto, foco visible y reducción de movimiento.
-   ------------------------------------------------------------------------- */
-::selection { background: rgba(8, 123, 120, .22); color: var(--ink); }
-
-/* Foco visible y consistente para quien navega con teclado. */
-:focus-visible { outline: 3px solid var(--focus) !important; outline-offset: 2px !important; border-radius: 6px; }
-[data-testid="stTextInput"] input:focus-visible { outline: none !important; }
-
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
-}
-
-/* -------------------------------------------------------------------------
-   Estructura y navegación de Streamlit
-   Fondos, ancho de página, barra lateral y controles de navegación.
-   ------------------------------------------------------------------------- */
-/* Mantiene fondos opacos y evita efectos que reduzcan la legibilidad del texto. */
-.stApp { background: var(--canvas); color: var(--ink); filter: none !important; opacity: 1 !important; }
-[data-testid="stHeader"] { background: var(--canvas) !important; opacity: 1 !important; backdrop-filter: none !important; }
-/* El padding superior debe superar la altura del encabezado fijo (~3.75rem) para que no tape el contenido. */
-[data-testid="stMainBlockContainer"] { max-width: 1440px; padding-top: 4.5rem; padding-bottom: 3rem; }
-[data-testid="stSidebar"] { background: var(--white) !important; border-right: 1px solid var(--line); }
+.stApp { background: var(--canvas); color: var(--ink); }
+[data-testid="stHeader"] { background: var(--canvas) !important; backdrop-filter: none !important; }
+[data-testid="stMainBlockContainer"] { max-width: 1440px; padding: 2rem 2rem 3rem; }
+[data-testid="stSidebar"] { background: #fff !important; border-right: 1px solid var(--line); }
 [data-testid="stSidebar"] > div:first-child { padding: 1.4rem 1rem; }
-[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { color: var(--ink); }
-
-/* Navegación lateral: áreas de toque amplias y estado activo claro. */
-[data-testid="stSidebar"] [data-testid="stRadio"] label {
-  border-radius: var(--radius-sm);
-  padding: .55rem .7rem;
-  min-height: 44px;
-  align-items: center;
-  width: 100%;
-  cursor: pointer;
-  transition: background-color .18s ease, box-shadow .18s ease;
-}
-[data-testid="stSidebar"] [data-testid="stRadio"] label:hover { background: var(--mint); }
-[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
-  background: var(--mint);
-  box-shadow: inset 4px 0 0 var(--teal);
-}
-[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) p { color: var(--teal-dark); }
-[data-testid="stSidebar"] [data-testid="stRadio"] label p { font-weight: 600; }
-
-/* -------------------------------------------------------------------------
-   Tipografía y etiquetas reutilizables
-   Títulos, textos de apoyo, etiquetas de sección, insignias y encabezados.
-   ------------------------------------------------------------------------- */
-h1, h2, h3 { color: var(--ink) !important; letter-spacing: -.025em; line-height: 1.2; }
+h1, h2, h3 { color: var(--ink) !important; letter-spacing: -.025em; }
 h1 { font-size: clamp(1.8rem, 3vw, 2.45rem) !important; font-weight: 750 !important; }
 h2, h3 { font-weight: 700 !important; }
 p, label, li { color: var(--ink); }
-.subtle { color: var(--muted) !important; margin-top: -.5rem; line-height: 1.55; }
-.eyebrow { color: var(--teal-dark) !important; font-size: .76rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; margin-bottom: .35rem; opacity: 1 !important; -webkit-font-smoothing: antialiased; }
-.section-eyebrow { margin-top: 1.5rem; }
-.tag { display: inline-block; border-radius: 999px; background: var(--mint); color: var(--teal-dark); padding: .35rem .75rem; font-size: .78rem; font-weight: 700; line-height: 1.2; }
-.section-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; margin-bottom: .4rem; }
-.section-heading h3 { margin: 0; }
-
-/* -------------------------------------------------------------------------
-   Componentes de Streamlit
-   Métricas, tablas, barras de progreso, alertas, botones y campos de texto.
-   ------------------------------------------------------------------------- */
-[data-testid="stMetric"] { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1rem 1.1rem; box-shadow: var(--shadow); min-height: 120px; }
-[data-testid="stMetricLabel"] { color: var(--muted); font-weight: 650; }
-[data-testid="stMetricValue"] { color: var(--ink); font-size: 1.75rem; font-weight: 750; }
-[data-testid="stMetricDelta"] { font-size: .8rem; }
-[data-testid="stDataFrame"] { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
-[data-testid="stProgress"] > div > div { background: var(--teal); }
+.eyebrow { color: var(--teal) !important; font-size: .78rem; font-weight: 800; letter-spacing: .1em; margin-bottom: .35rem; opacity: 1 !important; }
+.subtle { color: var(--muted) !important; }
+[data-testid="stMetric"] { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 1rem 1.1rem; box-shadow: var(--shadow); min-height: 110px; }
+[data-testid="stMetricLabel"] { color: var(--muted) !important; font-weight: 650; }
+[data-testid="stMetricValue"] { color: var(--ink) !important; font-weight: 750; }
+[data-testid="stDataFrame"] { background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
 [data-testid="stAlert"] { border-radius: 13px; }
-
-/* Botones: tamaño táctil mínimo, estados hover, activo y deshabilitado. */
-[data-testid="stButton"] button,
-[data-testid="stFormSubmitButton"] button {
-  border-radius: var(--radius-sm);
-  min-height: 2.8rem;
-  padding: .5rem 1.1rem;
-  font-weight: 700;
-  transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .12s ease;
-}
-[data-testid="stButton"] button:hover,
-[data-testid="stFormSubmitButton"] button:hover { box-shadow: 0 4px 12px rgba(23, 50, 79, .12); }
-[data-testid="stButton"] button:active,
-[data-testid="stFormSubmitButton"] button:active { transform: translateY(1px); box-shadow: none; }
-[data-testid="stButton"] button:not([kind="primary"]):hover,
-[data-testid="stFormSubmitButton"] button:not([kind="primary"]):hover { border-color: var(--teal); color: var(--teal-dark); background: var(--mint); }
-[data-testid="stButton"] button[kind="primary"],
-[data-testid="stFormSubmitButton"] button[kind="primary"] { background: var(--navy); border-color: var(--navy); color: #fff; }
-[data-testid="stButton"] button[kind="primary"]:hover,
-[data-testid="stFormSubmitButton"] button[kind="primary"]:hover { background: var(--navy-dark); border-color: var(--navy-dark); color: #fff; }
-[data-testid="stButton"] button:disabled,
-[data-testid="stFormSubmitButton"] button:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
-
-/* Campos de texto: etiquetas legibles y foco claro. */
-[data-testid="stTextInput"] label p,
-[data-testid="stTextArea"] label p,
-[data-testid="stSelectbox"] label p { font-weight: 650; font-size: .88rem; }
-[data-testid="stTextInput"] input,
-[data-testid="stTextArea"] textarea { border-radius: var(--radius-sm); border-color: #b9c8d4; min-height: 2.8rem; }
-[data-testid="stTextInput"] input::placeholder,
-[data-testid="stTextArea"] textarea::placeholder { color: #6b7d8f; opacity: 1; }
-[data-testid="stTextInput"] input:focus,
-[data-testid="stTextArea"] textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(8, 123, 120, .22); }
-
-/* Chat */
-[data-testid="stChatMessage"] { border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--white); padding: .85rem 1rem; margin-bottom: .6rem; }
-[data-testid="stChatInput"] { border-radius: var(--radius-lg); }
-
-/* -------------------------------------------------------------------------
-   Componentes del Dashboard
-   Aviso de demostración, resumen del paciente, detalles y tarjetas de alertas.
-   ------------------------------------------------------------------------- */
-.demo-note { background: #edf6f3; color: #254e4b; border: 1px solid #d5e8e2; padding: .7rem .9rem; border-radius: var(--radius-sm); margin: .5rem 0 1.3rem; font-size: .86rem; line-height: 1.5; }
-.patient-card { display: flex; align-items: center; gap: .85rem; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 1rem; margin: 1rem 0 .65rem; box-shadow: var(--shadow); }
-.patient-card span { color: var(--muted); font-size: .84rem; }
-.avatar { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; border-radius: 50%; background: var(--mint); color: var(--navy); font-weight: 800; font-size: 1.25rem; }
-.detail-row { display: flex; justify-content: space-between; align-items: baseline; gap: .8rem; padding: .7rem .15rem; border-bottom: 1px solid var(--line); font-size: .86rem; }
-.detail-row:last-child { border-bottom: 0; }
-.detail-row span { color: var(--muted); }
-.detail-row strong { text-align: right; overflow-wrap: anywhere; }
-
-/* Adherencia semanal: anillo circular con porcentaje y descripción. */
-.adherence-indicator { display: flex; align-items: center; gap: .9rem; padding: .85rem 0 .25rem; }
-.adherence-ring {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 76px;
-  height: 76px;
-  flex: 0 0 76px;
-  border-radius: 50%;
-  background: conic-gradient(var(--teal) var(--adherence), var(--line) 0);
-}
-.adherence-ring::before { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: var(--white); }
-.adherence-ring span { position: relative; color: var(--ink); font-size: .95rem; font-weight: 750; }
-.adherence-label { display: flex; flex-direction: column; gap: .2rem; }
-.adherence-label strong { color: var(--ink); font-size: .9rem; }
-.adherence-label span { color: var(--muted); font-size: .8rem; }
-
-/* Alertas: el color del borde indica prioridad (alta, media, baja). */
-.alert-card { display: flex; justify-content: space-between; align-items: flex-start; gap: .7rem; background: var(--white); border: 1px solid var(--line); border-left: 4px solid var(--coral); border-radius: 12px; padding: .85rem 1rem; margin: .55rem 0; box-shadow: var(--shadow); overflow-wrap: anywhere; }
-.alert-card span, .alert-card small { color: var(--muted); font-size: .82rem; }
-.alert-card small { white-space: nowrap; }
-.alert-medium { border-left-color: var(--amber); }
-.alert-low { border-left-color: var(--teal); }
-
-/* -------------------------------------------------------------------------
-   Elementos de la barra lateral
-   Etiqueta de navegación, nota al pie e indicador del usuario conectado.
-   ------------------------------------------------------------------------- */
-.nav-label, [data-testid="stSidebar"] p.nav-label { color: var(--muted) !important; font-size: .7rem !important; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; margin: .6rem 0; }
-.sidebar-footer { color: var(--muted); font-size: .76rem; line-height: 1.5; padding-top: 1.5rem; }
-.user-chip { background: var(--canvas); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: .7rem .8rem; color: var(--ink); font-size: .88rem; margin-bottom: 1.2rem; overflow-wrap: anywhere; }
-
-/* -------------------------------------------------------------------------
-   Vista de inicio de sesión
-   Panel de bienvenida, logotipo blanco y tarjeta del formulario de acceso.
-   ------------------------------------------------------------------------- */
-/* La altura crece con el contenido (nunca recorta texto) y se limita a la ventana cuando cabe. */
-.login-hero { min-height: min(520px, calc(100vh - 4rem)); padding: clamp(1.5rem, 3vw, 2.5rem); border-radius: 28px; background: linear-gradient(145deg, #12395f, #174f66); color: #fff; display: flex; flex-direction: column; justify-content: center; box-shadow: var(--shadow); }
-.hero-logo { width: min(150px, 50%); height: auto; margin-bottom: .25rem; display: block; filter: brightness(0) invert(1); }
-.login-hero .eyebrow { color: #c2e9e4 !important; margin-top: .5rem; }
-.login-hero h1 { color: #fff !important; font-size: clamp(2rem, 3.6vw, 3.2rem) !important; line-height: 1.08; margin-bottom: .5rem; }
-.hero-copy { color: #eef5f8 !important; max-width: 420px; font-size: 1rem; line-height: 1.6; }
-.hero-foot { color: #e3edf2; margin-top: 1.2rem; font-size: .82rem; line-height: 1.6; }
-.hero-foot span { padding: 0 .35rem; color: #c2e9e4; }
-
-/* Tarjeta del formulario de acceso (antes sin estilo propio). */
-[data-testid="stForm"] {
-  background: var(--white);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: clamp(1.25rem, 3vw, 2rem);
-  box-shadow: var(--shadow);
-}
-[data-testid="stForm"] [data-testid="stFormSubmitButton"] button { width: 100%; }
-
-/* Login: menos relleno vertical y sin barra de desplazamiento en pantallas de escritorio. */
-[data-testid="stMainBlockContainer"]:has(.login-hero) { padding-top: 1.5rem; padding-bottom: 1rem; }
-
-/* En el login el encabezado blanco tapaba el panel azul: se vuelve transparente y deja pasar los clics. */
-.stApp:has(.login-hero) [data-testid="stHeader"] { background: transparent !important; box-shadow: none !important; border: 0 !important; pointer-events: none; }
-.stApp:has(.login-hero) [data-testid="stHeader"] :is(button, a, [role="button"]) { pointer-events: auto; }
-@media (min-width: 761px) and (min-height: 700px) {
-  .stApp:has(.login-hero) [data-testid="stMain"],
-  .stApp:has(.login-hero) [data-testid="stAppViewContainer"] { overflow: hidden !important; }
-}
-
-/* En el login no hay sesión: se oculta la barra lateral (evita ver páginas internas y que se abra sobre el formulario en móvil). */
-.stApp:has(.login-hero) [data-testid="stSidebar"],
-.stApp:has(.login-hero) [data-testid="stExpandSidebarButton"],
-.stApp:has(.login-hero) [data-testid="stSidebarCollapsedControl"],
-.stApp:has(.login-hero) [data-testid="collapsedControl"] { display: none !important; }
-
-/* Oculta el botón Deploy y la franja decorativa de Streamlit (no aportan al usuario final). */
-[data-testid="stAppDeployButton"], .stAppDeployButton, [data-testid="stDecoration"] { display: none !important; }
-
-/* -------------------------------------------------------------------------
-   Ajustes adaptables
-   Reduce espacios y adapta los componentes en pantallas estrechas.
-   ------------------------------------------------------------------------- */
+[data-testid="stProgress"] > div > div { background: var(--teal); }
+[data-testid="stButton"] button, [data-testid="stFormSubmitButton"] button, [data-testid="stLinkButton"] a { border-radius: 10px; min-height: 2.65rem; font-weight: 700; }
+[data-testid="stButton"] button[kind="primary"], [data-testid="stFormSubmitButton"] button[kind="primary"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+[data-testid="stButton"] button[kind="primary"]:hover { background: #102d4b; border-color: #102d4b; }
+[data-testid="stTextInput"] input { border-radius: 10px; border-color: #cbd7e0; }
+.demo-note { background: #edf6f3; color: #254e4b; border: 1px solid #d5e8e2; padding: .7rem .9rem; border-radius: 10px; margin: .8rem 0 1.2rem; font-size: .86rem; }
+.sidebar-footer { color: var(--muted); font-size: .74rem; line-height: 1.5; padding-top: 1.5rem; }
+.login-hero { min-height: 390px; padding: clamp(2rem, 5vw, 4rem); border-radius: 26px; background: linear-gradient(145deg, #12395f, #174f66); color: #fff; display: flex; flex-direction: column; justify-content: center; box-shadow: var(--shadow); }
+.login-hero h1 { color: #fff !important; font-size: clamp(2.4rem, 4vw, 3.6rem) !important; }
+.login-hero .eyebrow { color: #c2e9e4 !important; }
+.hero-copy { color: #f1f6f9 !important; max-width: 390px; font-size: 1.05rem; line-height: 1.65; }
+.hero-foot { color: #e3edf2; margin-top: 2rem; font-size: .85rem; }
 @media (max-width: 760px) {
-  [data-testid="stMainBlockContainer"] { padding: 4.5rem 1rem 2rem; }
-  .login-hero { min-height: 300px; height: auto; max-height: none; padding: 1.7rem; border-radius: 22px; }
-  .hero-foot { margin-top: 1.2rem; }
-  [data-testid="stMetric"] { min-height: 100px; padding: .8rem; }
-  [data-testid="stMetricValue"] { font-size: 1.5rem; }
-  .alert-card { flex-direction: column; gap: .25rem; }
-  .alert-card small { white-space: normal; }
-  .patient-card { flex-wrap: wrap; }
+  [data-testid="stMainBlockContainer"] { padding: 1.2rem 1rem 2rem; }
+  [data-testid="stMetric"] { min-height: 95px; padding: .8rem; }
+  .login-hero { min-height: 280px; padding: 1.5rem; }
 }
