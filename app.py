@@ -53,6 +53,7 @@ def get_connected_data():
             "timestamp": vitals.get("fecha_registro"),
         },
         "source": connected["fuente"],
+        "source_warnings": connected.get("errores_fuente", []),
         "agent_data": connected,
         "alerts": alerts,
         "medications": [],
@@ -236,6 +237,9 @@ def main():
         data = get_connected_data()
     except DataSourceError as error:
         data = get_empty_connected_data(error)
+
+    for warning in data.get("source_warnings", []):
+        st.warning(warning)
 
     # La barra lateral contiene identidad, navegación, configuración de IA y salida.
     with st.sidebar:

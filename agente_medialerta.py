@@ -238,7 +238,7 @@ def _obtener_ultima_fila_sheetdb(url: str) -> dict[str, Any] | None:
 
     dated_rows = []
     for row in rows:
-        timestamp = row.get("HORA")
+        timestamp = row.get("HORA PST") or row.get("HORA")
         if not isinstance(timestamp, str):
             continue
         try:
@@ -307,25 +307,36 @@ def obtener_datos_conectados() -> dict[str, Any]:
         )
 
     registro_sheet = None
+    errores_fuente = []
+    sheetdb_consultado = False
     sheetdb_url = os.getenv("SHEETDB_API_URL", "").strip()
     if sheetdb_url:
-        registro_sheet = _obtener_ultima_fila_sheetdb(sheetdb_url)
+        try:
+            registro_sheet = _obtener_ultima_fila_sheetdb(sheetdb_url)
+            sheetdb_consultado = True
+        except DataSourceError as error:
+            errores_fuente.append(f"No se pudo consultar SheetDB: {error}")
 
     alerta_pastillas = None
     alertas_registradas: dict[str, Any] = {}
     if registro_sheet is not None:
         alerta_pastillas = _estado_alerta_activa(
-            registro_sheet.get("ALERTA PCTVACIO")
+            registro_sheet.get(
+                "ALERTA PCTVACIO",
+                registro_sheet.get("ALERTA PSTVACIO"),
+            )
         )
         alertas_registradas = {
             key: registro_sheet[key]
             for key in (
                 "DIA",
                 "HORA",
+                "HORA PST",
                 "PST",
                 "ALERTA ULT",
                 "ALERTA TCD",
                 "ALERTA PCTVACIO",
+                "ALERTA PSTVACIO",
             )
             if key in registro_sheet
         }
@@ -336,12 +347,13 @@ def obtener_datos_conectados() -> dict[str, Any]:
         if value
     ]
     data_sources = ["Adafruit IO"]
-    if sheetdb_url:
+    if sheetdb_consultado:
         data_sources.append("SheetDB")
 
     return {
         "modo_demo": False,
         "fuente": " y ".join(data_sources),
+        "errores_fuente": errores_fuente,
         "paciente": {},
         "signos_vitales": {
             "bpm": bpm["valor"],
