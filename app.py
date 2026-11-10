@@ -62,6 +62,29 @@ def get_connected_data():
     }
 
 
+def get_empty_connected_data(error):
+    """Prepara la estructura de las vistas cuando no se pueden leer datos."""
+    return {
+        "patient": {},
+        "vitals": {
+            "bpm": None,
+            "spo2": None,
+            "temperature": None,
+            "timestamp": None,
+            "fecha_bpm": None,
+            "fecha_spo2": None,
+        },
+        "source": "Adafruit IO",
+        "agent_data": {},
+        "alerts": [],
+        "medications": [],
+        "history": [],
+        "inventory": [],
+        "adherence": None,
+        "connection_error": str(error),
+    }
+
+
 def get_ai_recommendation(data):
     """Resume solo los datos que entregan las fuentes conectadas."""
     api_key = os.getenv("ANTHROPIC_API_KEY") or st.session_state.get("anthropic_key", "")
@@ -112,8 +135,10 @@ def render_dashboard(data):
     st.caption(f"Fuente: {data['source']}. Solo se muestran datos recibidos.")
 
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("❤️  Frecuencia cardiaca", f"{vitals['bpm']} bpm")
-    c2.metric("🫁  Oxígeno en sangre", f"{vitals['spo2']}%")
+    bpm = f"{vitals['bpm']} bpm" if vitals["bpm"] is not None else "Sin datos"
+    spo2 = f"{vitals['spo2']}%" if vitals["spo2"] is not None else "Sin datos"
+    c1.metric("❤️  Frecuencia cardiaca", bpm)
+    c2.metric("🫁  Oxígeno en sangre", spo2)
     temperature = vitals["temperature"]
     c3.metric(
         "🌡️  Temperatura",
@@ -124,8 +149,9 @@ def render_dashboard(data):
     left, right = st.columns([1.65, 1], gap="large")
     with left:
         st.markdown("### Lecturas recibidas")
-        st.write(f"**BPM:** {vitals['bpm']} · Registro: {vitals.get('fecha_bpm') or 'sin fecha'}")
-        st.write(f"**Oxigenación:** {vitals['spo2']}% · Registro: {vitals.get('fecha_spo2') or 'sin fecha'}")
+        st.write(f"**BPM:** {vitals['bpm'] if vitals['bpm'] is not None else 'Sin datos'} · Registro: {vitals.get('fecha_bpm') or 'sin fecha'}")
+        spo2_reading = f"{vitals['spo2']}%" if vitals["spo2"] is not None else "Sin datos"
+        st.write(f"**Oxigenación:** {spo2_reading} · Registro: {vitals.get('fecha_spo2') or 'sin fecha'}")
         st.info("El feed disponible entrega la última lectura, no un historial de varios días.")
     with right:
         st.markdown("### Información del paciente")
@@ -145,10 +171,13 @@ def render_dashboard(data):
         st.info("Las fuentes conectadas no proporcionan horarios ni registros de dosis.")
 
     st.markdown("### Recomendación del asistente")
-    try:
-        st.info(get_ai_recommendation(data))
-    except APIError as error:
-        st.error(f"No pude generar el resumen ({type(error).__name__}).")
+    if data.get("connection_error"):
+        st.info("Cuando el dispositivo envíe sus primeras lecturas, aparecerán aquí. Mientras tanto, puedes explorar las secciones disponibles.")
+    else:
+        try:
+            st.info(get_ai_recommendation(data))
+        except APIError as error:
+            st.error(f"No pude generar el resumen ({type(error).__name__}).")
 
 
 def render_medications(data):
@@ -206,8 +235,7 @@ def main():
     try:
         data = get_connected_data()
     except DataSourceError as error:
-        st.error(f"No puedo mostrar datos reales: {error}")
-        st.stop()
+        data = get_empty_connected_data(error)
 
     # La barra lateral contiene identidad, navegación, configuración de IA y salida.
     with st.sidebar:
@@ -227,6 +255,8 @@ def main():
 
     # Asocia cada opción del menú con su función de renderizado y muestra la vista.
     pages = {"Dashboard": render_dashboard, "Medicamentos": render_medications, "Historial": render_history, "Alertas": render_alerts, "Inventario": render_inventory, "Perfil": render_profile}
+    if data.get("connection_error"):
+        st.warning(f"No pude cargar las lecturas conectadas: {data['connection_error']}")
     pages[page](data)
 
 

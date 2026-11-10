@@ -140,7 +140,11 @@ La respuesta debe ser breve, organizada y comprensible para un cuidador.
 """
 
 
-def _solicitar_json(url: str, headers: dict[str, str] | None = None) -> Any:
+def _solicitar_json(
+    url: str,
+    source: str,
+    headers: dict[str, str] | None = None,
+) -> Any:
     request = Request(url, headers=headers or {}, method="GET")
 
     try:
@@ -148,15 +152,15 @@ def _solicitar_json(url: str, headers: dict[str, str] | None = None) -> Any:
             return json.loads(response.read().decode("utf-8"))
     except HTTPError as error:
         raise DataSourceError(
-            f"El servicio de datos respondió con HTTP {error.code}."
+            f"{source} respondió con HTTP {error.code}."
         ) from error
     except (URLError, TimeoutError, OSError) as error:
         raise DataSourceError(
-            "No se pudo conectar con el servicio de datos."
+            f"No se pudo conectar con {source}."
         ) from error
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise DataSourceError(
-            "El servicio de datos devolvió una respuesta inválida."
+            f"{source} devolvió una respuesta inválida."
         ) from error
 
 
@@ -170,7 +174,11 @@ def _obtener_ultima_lectura(
         f"/feeds/{quote(feed_key, safe='')}/data?"
         f"{urlencode({'limit': 1})}"
     )
-    response = _solicitar_json(url, {"X-AIO-Key": api_key})
+    response = _solicitar_json(
+        url,
+        f"Adafruit IO (feed '{feed_key}')",
+        {"X-AIO-Key": api_key},
+    )
 
     if isinstance(response, dict):
         readings = [response]
@@ -214,7 +222,7 @@ def _obtener_ultima_lectura(
 
 
 def _obtener_ultima_fila_sheetdb(url: str) -> dict[str, Any] | None:
-    response = _solicitar_json(url)
+    response = _solicitar_json(url, "SheetDB")
     if not isinstance(response, list):
         raise DataSourceError(
             "SheetDB devolvió un formato de registros inválido."
