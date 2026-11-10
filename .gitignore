@@ -1,7 +1,8 @@
-# Secrets and environment files
+# Secrets
 .env
 .env.*
 !.env.example
+.streamlit/secrets.toml
 
 # Python
 __pycache__/
@@ -9,5 +10,7 @@ __pycache__/
 .venv/
 venv/
 
-# Streamlit
-.streamlit/secrets.toml
+# Local demo database and generated files
+data/*.db
+data/*.sqlite
+data/*.sqlite3

@@ -1,8 +1,8 @@
-# MediAlerta — MVP para cuidadores
+# MediAlerta — MVP educativo con persistencia local
 
-Aplicación demostrativa en Streamlit para presentar lecturas de BPM y SpO₂ desde Adafruit IO, consultar alertas del pastillero (SheetDB opcional), usar un agente de apoyo y organizar una lista de reposición.
+Demo educativa construida con Streamlit y SQLite. Incluye dashboard con promedios diarios de BPM/SpO₂, configuración de medicamentos, registro de adherencia, alertas derivadas de reglas sencillas, inventario, carrito y pedidos demo.
 
-> El hardware no mide temperatura: MediAlerta no presenta ese dato. Esta aplicación no diagnostica, no sustituye a profesionales y no debe usarse para decisiones clínicas. El agente de compras organiza únicamente los productos que registra el cuidador; no elige ni prescribe medicamentos, no realiza pedidos ni procesa pagos.
+> **Alcance y seguridad:** todos los datos iniciales son ficticios y se guardan localmente en `data/medialerta_demo.db`. No se maneja temperatura. La demo no es un sistema clínico, no diagnostica ni recomienda tratamientos. El catálogo/precios y pedidos son simulados. El pago con tarjeta se representa únicamente como simulación: no solicites ni almacenes número, vencimiento o CVV. Para pagos reales se requiere un proveedor de pago seguro; esta app no procesa dinero. El inicio de sesión es solo demostrativo.
 
 ## Ejecutar
 
@@ -15,18 +15,30 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m streamlit run app.py
 ```
 
-En macOS/Linux, activa `.venv` con `source .venv/bin/activate`, luego instala dependencias y ejecuta `python -m streamlit run app.py`.
+En macOS/Linux, activa `.venv` con `source .venv/bin/activate`, luego instala dependencias con `python -m pip install -r requirements.txt` y ejecuta `streamlit run app.py`.
 
-## Configuración
+No se necesita Firebase, Anthropic ni un dispositivo para ejecutar la demo. SQLite forma parte de Python. La base se crea y se siembra automáticamente al iniciar.
 
-Copia `.env.example` como `.env` y completa las credenciales de Adafruit IO y los feeds de BPM y oxigenación. `ANTHROPIC_API_KEY` es opcional; sin esa clave, el agente de cuidado usa respuestas locales y el agente de compras aplica comparación determinista del stock.
+## Datos de acceso de demo
 
-No publiques claves API. El inicio de sesión actual es solo demostrativo.
+Ingresa cualquier nombre de usuario y contraseña no vacíos. Los datos pertenecen al paciente de demostración y son persistentes en SQLite. Para reiniciar el escenario, detén Streamlit y elimina `data/medialerta_demo.db`; la aplicación lo vuelve a crear con datos iniciales ficticios.
 
-## Páginas
+## Módulos
 
-- **Dashboard:** lecturas disponibles de Adafruit IO; si no hay conexión, muestra el error en vez de fabricar datos. Temperatura no aparece.
-- **Asistente de cuidado:** usa el agente LangGraph existente, reglas de alertas y contexto de lecturas conectadas.
-- **Carrito de compras:** el cuidador ingresa el producto, stock, mínimo y cantidad deseada. El agente identifica artículos que alcanzan el mínimo, crea una lista y ofrece enlaces de búsqueda a la tienda elegida. El usuario verifica el artículo y completa cualquier compra en la página del comercio.
+- **Dashboard:** promedio diario de BPM y SpO₂ calculado desde registros del día, adherencia de dosis registrada, número de lecturas, tendencia semanal, alertas y formulario para agregar lecturas simuladas. El periodo y el conteo se muestran junto a los promedios.
+- **Medicamentos:** agregar, editar y desactivar medicamentos, programar horarios en formato 24 h, ajustar inventario/precios demo y registrar estado de dosis.
+- **Asistente de cuidado:** consulta el contexto SQLite con el agente existente. `ANTHROPIC_API_KEY` es opcional; sin clave responde con reglas locales.
+- **Carrito y pedidos:** el agente de compras revisa el mínimo configurado del inventario y propone reabastecer solamente productos ya configurados. Permite revisar el carrito, ingresar datos de entrega no sensibles, elegir efectivo contra entrega o tarjeta simulada y guardar pedidos en SQLite.
+- **Persistencia:** pacientes, lecturas, medicamentos, logs de dosis, inventario, carrito y órdenes se guardan localmente.
 
-El carrito se guarda únicamente en la sesión actual de Streamlit. No hay integración de pago, órdenes automáticas ni conexión con una farmacia.
+## Configuración opcional de IA
+
+Copia `.env.example` a `.env` y define `ANTHROPIC_API_KEY` si se quiere usar Claude para el asistente de cuidado. Las funciones principales, reglas y agente de reabastecimiento funcionan sin esa clave. No subas secretos.
+
+## Esquema SQLite
+
+`users`, `patients`, `vital_signs`, `medications`, `medication_logs`, `inventory`, `carts`, `cart_items`, `orders`, `order_items` y `alerts`. La base se excluye del control de versiones.
+
+## Limitaciones
+
+Los promedios y umbrales son de demostración y no deben interpretarse clínicamente. El carrito organiza una orden educativa; no reserva stock real, no está conectado a una farmacia ni a un proveedor de entrega. La tarjeta nunca se captura. La autenticación es simulada y no protege información sensible; no uses datos reales de pacientes.
