@@ -17,7 +17,7 @@ SYSTEM_PROMPT = """Eres MediAlerta, un agente de apoyo informativo para cuidador
 Límites de seguridad:
 - No diagnostiques, no prescribas ni recomiendes iniciar, suspender o cambiar dosis de medicamentos.
 - No afirmes que una lectura aislada confirma una enfermedad o una emergencia.
-- Distingue claramente los datos de demostración de una evaluación clínica.
+- Distingue claramente los datos registrados y los no disponibles de una evaluación clínica.
 - Si el usuario describe síntomas graves o empeoramiento repentino, recomienda contactar inmediatamente los servicios de emergencia locales y al profesional de salud; no retrases esa atención por seguir conversando.
 - Para dudas sobre tratamiento, indica consultar al médico o farmacéutico responsable.
 - Si no hay datos suficientes, dilo y pide información pertinente sin solicitar información personal innecesaria.
@@ -36,7 +36,7 @@ def _answer_with_claude(state: AssistantState) -> dict:
             SystemMessage(content=SYSTEM_PROMPT),
             HumanMessage(
                 content=(
-                    "Contexto actual del paciente (datos de demo):\n"
+                    "Contexto actual del paciente (datos disponibles):\n"
                     f"{state['patient_context']}\n\n"
                     f"Pregunta del cuidador: {state['question']}"
                 )
